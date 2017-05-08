@@ -100,8 +100,8 @@ def assign_step_methods(model, step=None, methods=STEP_METHODS,
     return steps
 
 
-def sample(draws=1000, step=None, init='auto', n_init=200000, start=None,
-           trace=None, chain=0, njobs=4, tune=500, nuts_kwargs=None,
+def sample(draws=500, step=None, init='auto', n_init=200000, start=None,
+           trace=None, chain=0, njobs=1, tune=500, nuts_kwargs=None,
            step_kwargs=None, progressbar=True, model=None, random_seed=-1,
            live_plot=False, discard_tuned_samples=True, **kwargs):
     """Draw samples from the posterior using the given step methods.
@@ -153,7 +153,9 @@ def sample(draws=1000, step=None, init='auto', n_init=200000, start=None,
         Number of parallel jobs to start. If None, set to number of cpus
         in the system - 2.
     tune : int
-        Number of iterations to tune, if applicable (defaults to 500)
+        Number of iterations to tune, if applicable (defaults to 500).
+        These samples will be drawn in addition to samples and discarded
+        unless discard_tuned_samples is set to True.
     nuts_kwargs : dict
         Options for the NUTS sampler. See the docstring of NUTS
         for a complete list of options. Common options are
@@ -213,6 +215,8 @@ def sample(draws=1000, step=None, init='auto', n_init=200000, start=None,
     """
     model = modelcontext(model)
 
+    draws += tune
+
     if init is not None:
         init = init.lower()
 
@@ -260,10 +264,7 @@ def sample(draws=1000, step=None, init='auto', n_init=200000, start=None,
     else:
         sample_func = _sample
 
-    if discard_tuned_samples:
-        discard = tune
-    else:
-        discard = 0
+    discard = tune if discard_tuned_samples else 0
 
     return sample_func(**sample_args)[discard:]
 
